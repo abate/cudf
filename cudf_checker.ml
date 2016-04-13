@@ -134,10 +134,11 @@ let is_solution (univ, req) sol =
 	      (get_installed univ name)
 	    @ List.map	(* virtual packages; "None" means "all versions" *)
 	      (fun (_pkg, version) -> version)
-	      (who_provides univ (name, None)) in
+	      (who_provides univ (Name (name))) in
 	  let res =
 	    List.fold_left
-	      (fun (ok, downgrades, multi) ((name, _constr) as vpkg) ->
+	      (fun (ok, downgrades, multi) vpkg ->
+              let name = fst(_temp_compatibility_vpkg vpkg) in
 		 match List.unique (versions_of sol name) with
 		   | [Some v] ->
 		       let old_installed = versions_of univ name in
@@ -177,7 +178,7 @@ let is_solution (univ, req) sol =
 		    (lookup_package sol (pkg.package, pkg.version)).installed
 		  with Not_found -> false)
 	     | `Keep_package ->
-		 mem_installed ~include_features:false sol (pkg.package, None)
+		 mem_installed ~include_features:false sol (Name pkg.package)
 	     | `Keep_feature ->
 		 fst (satisfy_formula sol (and_formula pkg.provides))
 	     | _ -> assert false	(* [get_packages ~filter] is broken *)

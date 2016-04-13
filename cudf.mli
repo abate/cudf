@@ -28,7 +28,7 @@ type package = {
   version : version ;
   depends : vpkgformula ;			(* default : [] *)
   conflicts : vpkglist ;			(* default : [] *)
-  provides : veqpkglist ;			(* default : [] *)
+  provides : vpkglist ;			(* default : [] *)
   installed : bool ;				(* default : false *)
   was_installed : bool ;			(* default : false *)
   keep :  enum_keep ;				(* default : `Keep_none *)
@@ -153,7 +153,7 @@ val who_provides : ?installed:bool -> universe -> vpkg -> (package * version opt
 
     @param filter filter the found packages according to the given
     version constraint. Default: None (i.e., no filtering) *)
-val lookup_packages : ?filter:constr -> universe -> pkgname -> package list
+val lookup_packages : ?filter:constr option -> universe -> pkgname -> package list
 
 (** lookup all installed versions of a given package name.
     Shorthand for [lookup_packages] composed with filtering on installed=true *)
@@ -263,7 +263,7 @@ val lookup_package_typedecl : ?extra:typedecl -> string -> typedecl1
 
 (** Check whether a version matches a version constraint,
     e.g. [version_matches 1 (Some(`Eq, 2)) = false] *)
-val version_matches : version -> constr -> bool
+val version_matches : version -> constr option -> bool
 
 (** Same as {!Cudf.version_matches} *)
-val ( |= ) : version -> constr -> bool
+val ( |= ) : version -> constr option -> bool

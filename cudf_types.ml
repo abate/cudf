@@ -15,14 +15,21 @@ open Printf
 
 type version = int
 type relop = [`Eq|`Neq|`Geq|`Gt|`Leq|`Lt]
-type constr = (relop * version) option
+type constr = relop * version
 
 type pkgname = string
-type vpkg = pkgname * constr
+type vpkg = 
+  |Name of pkgname
+  |NameConstr of pkgname * constr
+  |NameConstrEq of pkgname * version
+
+let _temp_compatibility_vpkg = function
+  |Name name -> (name,None)
+  |NameConstr(name,constr) -> (name,Some(constr))
+  |NameConstrEq(name,version) -> (name,Some(`Eq,version))
+
 type vpkglist = vpkg list
 type vpkgformula = vpkg list list
-type veqpkg = pkgname * ([`Eq] * version) option
-type veqpkglist = veqpkg list
 type enum_keep = [`Keep_version | `Keep_package | `Keep_feature | `Keep_none ]
 
 type typ =
@@ -36,7 +43,7 @@ type typedecl1 =
     | `Pkgname of string option | `Ident of string option
     | `Enum of string list * string option | `Vpkg of vpkg option
     | `Vpkgformula of vpkgformula option | `Vpkglist of vpkglist option
-    | `Veqpkg of veqpkg option | `Veqpkglist of veqpkglist option
+    | `Veqpkg of vpkg option | `Veqpkglist of vpkglist option
     | `Typedecl of typedecl option ]
 and typedecl = (string * typedecl1) list
 type typed_value =
@@ -44,7 +51,7 @@ type typed_value =
     | `String of string | `Pkgname of string | `Ident of string
     | `Enum of string list * string | `Vpkg of vpkg
     | `Vpkgformula of vpkgformula | `Vpkglist of vpkglist
-    | `Veqpkg of veqpkg | `Veqpkglist of veqpkglist
+    | `Veqpkg of vpkg | `Veqpkglist of vpkglist
     | `Typedecl of typedecl ]
 
 type 'ty stanza = (string * 'ty) list
@@ -150,14 +157,14 @@ let rec cast typ v =
     | `Nat, `Int n when n >= 0 -> `Nat n
     | `Bool, `Ident "true" -> `Bool true
     | `Bool, `Ident "false" -> `Bool false
-    | `Pkgname, `Vpkgformula [[(pkg, None)]] -> `Pkgname pkg
+    | `Pkgname, `Vpkgformula [[Name pkg]] -> `Pkgname pkg
     | `Pkgname, (`Int n | `Posint n | `Nat n) -> `Pkgname (string_of_int n)
     | `Pkgname, `Ident i-> `Pkgname i
     | (`Vpkg | `Veqpkg | `Vpkglist | `Veqpkglist),
       (`Int n | `Posint n | `Nat n) ->
-	cast typ (`Vpkgformula [[string_of_int n, None]])
+	cast typ (`Vpkgformula [[Name (string_of_int n)]])
     | (`Vpkg | `Veqpkg | `Vpkglist | `Veqpkglist), `Ident i ->
-	cast typ (`Vpkgformula [[i, None]])
+	cast typ (`Vpkgformula [[Name i]])
     | `Vpkg, `Vpkgformula [[vpkg]] -> `Vpkg vpkg
     | (`Vpkglist | `Veqpkglist),
       (`Vpkgformula [] (* "true!" *) | `Vpkgformula [ [] ] (* "false!" *)) ->
@@ -167,28 +174,28 @@ let rec cast typ v =
 	  type_error ()	(* there are OR-ed deps *)
 	else
 	  `Vpkglist (List.map (function [vpkg] -> vpkg | _ -> assert false) f)
-    | `Veqpkg, `Vpkgformula [[ (_, (Some (`Eq, _) | None)) as vpkg ]] ->
-	`Veqpkg vpkg
+    | `Veqpkg, `Vpkgformula [[ ((Name _) | (NameConstrEq _)) as vpkg ]] ->
+        `Veqpkg vpkg
     | `Veqpkglist, `Vpkgformula f ->
 	`Veqpkglist
 	  (List.fold_right
 	     (fun or_deps veqpkgs ->
 		match or_deps with
-		  | [ (_, (Some (`Eq, _) | None)) as vpkg ] -> vpkg :: veqpkgs
+		  | [ ((Name _) | (NameConstrEq _)) as vpkg ] -> vpkg :: veqpkgs
 		  | _ -> type_error ())
 	     f [])
-    | `Veqpkg, `Vpkg ((_, (Some (`Eq, _) | None)) as vpkg) -> `Veqpkg vpkg
+    | `Veqpkg, `Vpkg (((Name _) | (NameConstrEq _)) as vpkg) -> `Veqpkg vpkg
     | `Veqpkglist, `Vpkglist l ->
 	`Veqpkglist
 	  (List.fold_right
 	     (fun vpkg veqpkgs ->
 		match vpkg with
-		  | (_, (Some (`Eq, _) | None)) as vpkg -> vpkg :: veqpkgs
+		  | ((Name _) | (NameConstrEq _)) as vpkg -> vpkg :: veqpkgs
 		  | _ -> type_error ())
 	     l [])
     | `Enum enums, `Ident i when List.mem i enums -> `Enum (enums, i)
-    | `Vpkgformula, `Ident i -> `Vpkgformula [[i, None]]
-    | `Vpkgformula, `Int n -> `Vpkgformula [[string_of_int n, None]]
+    | `Vpkgformula, `Ident i -> `Vpkgformula [[Name i]]
+    | `Vpkgformula, `Int n -> `Vpkgformula [[ Name (string_of_int n)]]
     | typ, v when type_of_value v = typ -> v	(* identity cast *)
     | _ -> type_error ()
 
@@ -197,8 +204,9 @@ let rec is_eq_formula f =
 	 (fun vpkgs ->
 	    List.exists
 	      (function
-		 | (_, Some ((`Neq | `Geq | `Gt | `Leq | `Lt), _)) -> true
-		 | _ -> false)
+              |Name _ -> true
+              |NameConstr _ -> true
+              |NameConstrEq _ -> false)
 	      vpkgs)
 	 f)
 

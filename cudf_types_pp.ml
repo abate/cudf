@@ -60,8 +60,8 @@ let cast' typ v =
 let parse_posint s: int = unbox (cast' `Posint (`Int (parse_int s)))
 let parse_nat s: int = unbox (cast' `Nat (`Int (parse_int s)))
 let parse_bool s: bool = unbox (cast' `Bool (`Ident (parse_ident s)))
-let parse_veqpkg s: veqpkg = unbox (cast' `Veqpkg (`Vpkg (parse_vpkg s)))
-let parse_veqpkglist s: veqpkglist =
+let parse_veqpkg s : vpkg = unbox (cast' `Veqpkg (`Vpkg (parse_vpkg s)))
+let parse_veqpkglist s: vpkglist =
   unbox (cast' `Veqpkglist (`Vpkglist (parse_vpkglist s)))
 
 let parse_enum ~enums s =
@@ -124,8 +124,9 @@ let string_of_relop = function
   | `Lt -> "<"
 
 let string_of_vpkg = function
-    (name, None) -> name
-  | (name, Some (relop, v)) -> sprintf "%s %s %d" name (string_of_relop relop) v
+  |Name name -> name
+  |NameConstr(name, (relop, v)) -> sprintf "%s %s %d" name (string_of_relop relop) v
+  |NameConstrEq(name, v) -> sprintf "%s = %d" name v
 
 let string_of_list string_of_item sep l =
   let buf = Buffer.create 1023 in
