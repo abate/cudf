@@ -1,8 +1,8 @@
 <test.ml> or <tests.ml> : pkg_oUnit
 <test.byte> or <test.native> : pkg_oUnit
 
-<*.ml> or <*.mli> : pkg_extlib
-<*.byte> or <*.native> : pkg_extlib
+<*.ml> or <*.mli> : pkg_extlib, pkg_ocamlviz, pkg_threads
+<*.byte> or <*.native> : pkg_extlib, pkg_ocamlviz, pkg_threads
 
 
 <c-lib/*>: not_hygienic

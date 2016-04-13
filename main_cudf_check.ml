@@ -13,6 +13,8 @@
 open ExtLib
 open Printf
 
+let _ = Ocamlviz.init ();;
+
 open Cudf
 open Cudf_checker
 
