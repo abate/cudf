@@ -23,7 +23,7 @@ type package = {
   version : version ;
   depends : vpkgformula ;
   conflicts : vpkglist ;
-  provides : veqpkglist ;
+  provides : vpkglist ;
   installed : bool ;
   was_installed : bool ;
   keep : enum_keep ;
@@ -126,8 +126,9 @@ let get_hash_list h n = try !(Hashtbl.find h n) with Not_found -> []
 let expand_features pkg features =
     List.iter
       (function
-        | name, None -> add_to_hash_list features name (pkg, None)
-        | name, Some (_, ver) -> add_to_hash_list features name (pkg, (Some ver)))
+        | Name name -> add_to_hash_list features name (pkg, None)
+        | (NameConstrEq (name,ver) | NameConstr (name, (_, ver))) ->
+            add_to_hash_list features name (pkg, (Some ver)))
       pkg.provides
 
 let add_package_aux univ pkg uid =
@@ -162,12 +163,12 @@ let remove_package univ id =
 
     List.iter
       (function
-      | name, None ->
+      | Name name ->
           let l = Hashtbl.find univ.features name in
           l := List.remove !l (p, None);
           if List.length !l = 0 then
             Hashtbl.remove univ.features name
-      | name, Some (_, ver) ->
+      | (NameConstrEq (name,ver) | NameConstr (name, (_, ver))) ->
           let l = Hashtbl.find univ.features name in
           l := List.remove !l (p, (Some ver));
           if List.length !l = 0 then
@@ -258,13 +259,14 @@ let get_installed univ pkgname =
   List.filter (fun { installed = i } -> i) (lookup_packages univ pkgname)
 
 let mem_installed ?(include_features = true) ?(ignore = fun _ -> false)
-    univ (name, constr) =
+    univ vpkg =
+  let (name, constr) = _temp_compatibility_vpkg vpkg in
   let pkg_filter = fun pkg -> not (ignore pkg) in
   let mem_feature constr =
     let feats = get_hash_list univ.features name in
       List.exists
 	(function
-           | owner_pkg, _ when not owner_pkg.installed -> false
+         | owner_pkg, _ when not owner_pkg.installed -> false
 	   | owner_pkg, None -> pkg_filter owner_pkg
 	   | owner_pkg, Some v -> pkg_filter owner_pkg && v |= constr)
 	feats in
@@ -272,7 +274,8 @@ let mem_installed ?(include_features = true) ?(ignore = fun _ -> false)
     List.exists (fun pkg -> pkg.version |= constr) pkgs
     || (include_features && mem_feature constr)
 
-let who_provides ?(installed=true) univ (pkgname, constr) =
+let who_provides ?(installed=true) univ vpkg =
+  let (pkgname, constr) = _temp_compatibility_vpkg vpkg in
   List.filter
     (function 
       |pkg , _ when not pkg.installed && installed -> false

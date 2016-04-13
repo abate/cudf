@@ -92,10 +92,7 @@ pkgname:
   | NEGINT	{ $1 }
 ;
 
-relop:
-  | RELOP	{ parse_relop $1 }
-  | EQ		{ `Eq }
-;
+relop: RELOP { parse_relop $1 } ;
 
 int:
   | POSINT	{ int_of_string $1 }
@@ -103,8 +100,9 @@ int:
 ;
 
 vpkg:
-  | pkgname			{ ($1, None) }
-  | pkgname relop version	{ ($1, Some ($2, $3)) }
+  | pkgname			      { Cudf_types.Name($1) }
+  | pkgname EQ version	      { Cudf_types.NameConstrEq($1,$3) }
+  | pkgname relop version	{ Cudf_types.NameConstr($1,($2, $3)) }
 ;
 vpkglist:
   |		{ [] }
@@ -147,8 +145,9 @@ or_formula_ntriv:
   | vpkg PIPE or_formula	{ $1 :: $3 }
 ;
 vpkg_ntriv:
-  | PKGNAME			{ ($1, None) }
-  | pkgname relop version	{ ($1, Some ($2, $3)) }
+  | PKGNAME			  { Cudf_types.Name($1) }
+  | pkgname EQ version	  { Cudf_types.NameConstrEq($1,$3) }
+  | pkgname relop version { Cudf_types.NameConstr($1,($2, $3)) }
 ;
 
 typedecl:

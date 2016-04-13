@@ -207,13 +207,13 @@ let value_parse_suite =
       "enum", `Enum ["foo";"bar";"baz"], "foo",
         `Enum(["foo";"bar";"baz"], "foo") ;
       "keep", keep_type, "feature", `Enum (keep_enums, "feature") ;
-      "vpkg dumb", `Vpkg, "foo", `Vpkg ("foo", None) ;
-      "vpkg", `Vpkg, "foo > 1", `Vpkg ("foo", Some (`Gt, 1)) ;
-      "fmla vpkg", `Vpkgformula, "foo", `Vpkgformula [["foo", None]] ;
+      "vpkg dumb", `Vpkg, "foo", `Vpkg (Name("foo")) ;
+      "vpkg", `Vpkg, "foo > 1", `Vpkg (NameConstr("foo",(`Gt, 1))) ;
+      "fmla vpkg", `Vpkgformula, "foo", `Vpkgformula [[Name("foo")]] ;
       "fmla true", `Vpkgformula, "true!", `Vpkgformula [] ;
       "fmla false", `Vpkgformula, "false!", `Vpkgformula [ [] ] ;
       "fmla and", `Vpkgformula, "foo, bar > 1",
-        `Vpkgformula [ ["foo", None] ; ["bar", Some (`Gt, 1)] ] ;
+        `Vpkgformula [ ["foo", None] ; [NameConstr("bar", (`Gt, 1))] ] ;
       "fmla or", `Vpkgformula, "foo < 7 | bar",
         `Vpkgformula [ ["foo", Some (`Lt, 7) ; "bar", None] ] ;
       "fmla cnf", `Vpkgformula, "foo | bar, quux | baz | sup",

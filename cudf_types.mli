@@ -22,13 +22,18 @@
 
 type version = int	(* required to be non 0 *)
 type relop = [`Eq | `Neq | `Geq | `Gt | `Leq | `Lt]
-type constr = (relop * version) option
-
+type constr = relop * version
 
 (** {6 CUDF spec. types} *)
 
 type pkgname = string
-type vpkg = pkgname * constr
+type vpkg =
+  |Name of pkgname
+  |NameConstr of pkgname * constr
+  |NameConstrEq of pkgname * version
+
+val _temp_compatibility_vpkg : vpkg -> (pkgname * constr option)
+
 type vpkglist = vpkg list
 type enum_keep = [`Keep_version | `Keep_package | `Keep_feature | `Keep_none ]
 
@@ -39,9 +44,6 @@ type enum_keep = [`Keep_version | `Keep_package | `Keep_feature | `Keep_none ]
     - "Depends: false!"			-->	[ [] ]
 *)
 type vpkgformula = vpkg list list
-
-type veqpkg = pkgname * ([`Eq] * version) option
-type veqpkglist = veqpkg list
 
 (** CUDF types *)
 type typ =
@@ -67,8 +69,8 @@ type typedecl1 =
     | `Vpkg of vpkg option
     | `Vpkgformula of vpkgformula option
     | `Vpkglist of vpkglist option
-    | `Veqpkg of veqpkg option
-    | `Veqpkglist of veqpkglist option
+    | `Veqpkg of vpkg option
+    | `Veqpkglist of vpkglist option
     | `Typedecl of typedecl option
     ]
 
@@ -87,8 +89,8 @@ type typed_value =
     | `Vpkg of vpkg
     | `Vpkgformula of vpkgformula
     | `Vpkglist of vpkglist
-    | `Veqpkg of veqpkg
-    | `Veqpkglist of veqpkglist
+    | `Veqpkg of vpkg
+    | `Veqpkglist of vpkglist
     | `Typedecl of typedecl
     ]
 

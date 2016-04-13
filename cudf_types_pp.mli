@@ -43,8 +43,8 @@ val parse_enum : enums:string list -> string -> string
 val parse_vpkg : string -> vpkg
 val parse_vpkglist : string -> vpkglist
 val parse_vpkgformula : string -> vpkgformula
-val parse_veqpkg : string -> veqpkg
-val parse_veqpkglist : string -> veqpkglist
+val parse_veqpkg : string -> vpkg
+val parse_veqpkglist : string -> vpkglist
 val parse_typedecl : string -> typedecl
 
 (** {6 Parsing of other CUDF entities}
@@ -95,8 +95,8 @@ val string_of_version : version -> string
 val string_of_vpkg : vpkg -> string
 val string_of_vpkglist : vpkglist -> string
 val string_of_vpkgformula : vpkgformula -> string
-val string_of_veqpkg : veqpkg -> string
-val string_of_veqpkglist : veqpkglist -> string
+val string_of_veqpkg : vpkg -> string
+val string_of_veqpkglist : vpkglist -> string
 val string_of_typedecl : typedecl -> string
 
 val string_of_type : typ -> string
